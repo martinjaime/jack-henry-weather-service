@@ -46,6 +46,8 @@ Then make a request to the endpoint:
 curl "http://localhost:3000/current-forecast?lat=38.9717&lon=-95.2353"
 ```
 
+Or go to 'http://localhost:3000/docs' for interactive API swagger docs.
+
 Example success response:
 
 ```json
