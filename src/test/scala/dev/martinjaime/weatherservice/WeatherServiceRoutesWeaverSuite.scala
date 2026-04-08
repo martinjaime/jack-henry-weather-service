@@ -17,6 +17,14 @@ object WeatherServiceRoutesWeaverSuite extends SimpleIOSuite {
 
   private val weatherConfig = WeatherConfig(feelsLikeHotThresholdF = 70.0)
 
+  private def appFailingWith(error: Throwable) = {
+    val service = new NationalWeatherService[IO] {
+      override def getForecast(lat: Double, lon: Double): IO[NatGridPointsPeriods] = IO.raiseError(error)
+    }
+
+    WeatherServiceRoutes.routes[IO](service, weatherConfig).orNotFound
+  }
+
   private def appReturning(period: NatGridPointsPeriods) = {
     val service = new NationalWeatherService[IO] {
       override def getForecast(lat: Double, lon: Double): IO[NatGridPointsPeriods] = IO.pure(period)
@@ -50,6 +58,19 @@ object WeatherServiceRoutesWeaverSuite extends SimpleIOSuite {
       body <- res.as[ErrorResponse]
     } yield expect(res.status == Status.BadRequest) &&
       expect(body.error.contains("Unsupported temperature unit"))
+  }
+
+  test("current-forecast returns 500 for unexpected service errors") {
+    val req = Request[IO](
+      method = Method.GET,
+      uri = uri"/current-forecast".withQueryParam("lat", 40.7).withQueryParam("lon", -74.0)
+    )
+
+    for {
+      res <- appFailingWith(new RuntimeException("boom")).run(req)
+      body <- res.as[ErrorResponse]
+    } yield expect(res.status == Status.InternalServerError) &&
+      expect(body.error == "Internal server error")
   }
 }
 
