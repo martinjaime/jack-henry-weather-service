@@ -24,7 +24,7 @@ object WeatherServiceRoutes {
       .errorOut(statusCode.and(jsonBody[ErrorResponse]))
       .description("Get current weather summary by lat/lon")
 
-  // Converts known units to Fahrenheit, then classifies into a simple hot/cold label.
+  // Converts known units to Fahrenheit, then classifies into a simple hot/cold/moderate label.
   private def parseFeelsLike(temp: Int, unit: String, weatherConfig: WeatherConfig): Either[Error, String] = {
     val fahrenheitEither = unit.trim.toUpperCase match {
       case "F"         => Right(temp.toDouble)
