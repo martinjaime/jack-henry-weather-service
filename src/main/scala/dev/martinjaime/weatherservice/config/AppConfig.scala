@@ -9,13 +9,13 @@ object AppConfig {
   case class WeatherConfig(
     feelsLikeHotThresholdF: Double,
     feelsLikeColdThresholdF: Double
-  ) derives ConfigReader
+  )
 
   // reader that checks that hot temp is over cold temp
   given weatherConfigReader: ConfigReader[WeatherConfig] = ConfigReader
     .forProduct2(
-      "feelsLikeHotThresholdF",
-      "feelsLikeColdThresholdF"
+      "feels-like-hot-threshold-f",
+      "feels-like-cold-threshold-f"
     )(WeatherConfig.apply)
     .emap { config =>
       if (config.feelsLikeHotThresholdF > config.feelsLikeColdThresholdF) Right(config)
