@@ -12,8 +12,9 @@ import org.http4s.circe.*
 import org.http4s.Method.*
 import org.typelevel.log4cats.LoggerFactory
 
-trait NationalWeatherService[F[_]]:
+trait NationalWeatherService[F[_]] {
   def getForecast(lat: Double, lon: Double): F[NatGridPointsPeriods]
+}
 
 object NationalWeatherService {
   def apply[F[_]](using ev: NationalWeatherService[F]): NationalWeatherService[F] = ev
