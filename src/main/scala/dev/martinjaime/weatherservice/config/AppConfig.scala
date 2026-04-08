@@ -6,7 +6,28 @@ import pureconfig.error.CannotConvert
 
 case class AppConfig(port: Port, host: Host, weather: AppConfig.WeatherConfig) derives ConfigReader
 object AppConfig {
-  case class WeatherConfig(feelsLikeHotThresholdF: Double) derives ConfigReader
+  case class WeatherConfig(
+    feelsLikeHotThresholdF: Double,
+    feelsLikeColdThresholdF: Double
+  ) derives ConfigReader
+
+  // reader that checks that hot temp is over cold temp
+  given weatherConfigReader: ConfigReader[WeatherConfig] = ConfigReader
+    .forProduct2(
+      "feelsLikeHotThresholdF",
+      "feelsLikeColdThresholdF"
+    )(WeatherConfig.apply)
+    .emap { config =>
+      if (config.feelsLikeHotThresholdF > config.feelsLikeColdThresholdF) Right(config)
+      else
+        Left(
+          CannotConvert(
+            s"hot threshold ${config.feelsLikeHotThresholdF} must be greater than cold threshold ${config.feelsLikeColdThresholdF}",
+            WeatherConfig.getClass.toString,
+            "Invalid weather configuration"
+          )
+        )
+    }
 
   given hostReader: ConfigReader[Host] = ConfigReader[String].emap { hostStr =>
     Host

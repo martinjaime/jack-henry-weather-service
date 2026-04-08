@@ -25,7 +25,7 @@ object WeatherServiceRoutes {
       .description("Get current weather summary by lat/lon")
 
   // Converts known units to Fahrenheit, then classifies into a simple hot/cold label.
-  private def parseFeelsLike(temp: Int, unit: String, hotThresholdF: Double): Either[Error, String] = {
+  private def parseFeelsLike(temp: Int, unit: String, weatherConfig: WeatherConfig): Either[Error, String] = {
     val fahrenheitEither = unit.trim.toUpperCase match {
       case "F"         => Right(temp.toDouble)
       case "C"         => Right((temp * 9.0 / 5.0) + 32.0)
@@ -33,8 +33,10 @@ object WeatherServiceRoutes {
     }
 
     fahrenheitEither.map { fahrenheit =>
-      // An enum for hot/cold would be better
-      if (fahrenheit >= hotThresholdF) "hot" else "cold"
+      // An enum for hot/cold/moderate would be better
+      if (fahrenheit > weatherConfig.feelsLikeHotThresholdF) "hot"
+      else if (fahrenheit < weatherConfig.feelsLikeColdThresholdF) "cold"
+      else "moderate"
     }
   }
 
@@ -50,12 +52,11 @@ object WeatherServiceRoutes {
         val result = for {
           _   <- logger.info(s"Received request for current forecast at lat: $lat, lon: $lon")
           res <- weatherService.getForecast(lat, lon)
-        } yield parseFeelsLike(res.temperature, res.temperatureUnit, weatherConfig.feelsLikeHotThresholdF).map {
-          feelsLike =>
-            WeatherSummary(
-              feelsLike = feelsLike,
-              condition = res.shortForecast
-            )
+        } yield parseFeelsLike(res.temperature, res.temperatureUnit, weatherConfig).map { feelsLike =>
+          WeatherSummary(
+            feelsLike = feelsLike,
+            condition = res.shortForecast
+          )
         }
 
         result.attempt.flatMap {
